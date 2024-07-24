@@ -1,0 +1,29 @@
+{
+  "name": "backend-webrtc",
+  "version": "1.0.0",
+  "description": "A nodejs and express based server for OpenSpace WebRTC",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenSpace/Backend-WebRTC.git"
+  },
+  "keywords": [
+    "Openspace-webRTC",
+    "Backend"
+  ],
+  "author": "Abhay Garg",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/OpenSpace/Backend-WebRTC/issues"
+  },
+  "homepage": "https://github.com/OpenSpace/Backend-WebRTC#readme",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pg": "^8.12.0",
+    "sequelize": "^6.37.3"
+  }
+}
