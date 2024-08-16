@@ -15,7 +15,16 @@ const Server = sequelize.define('Server', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    status: {
+        type: DataTypes.ENUM('running', 'stopped'),
+        allowNull: false,
+        defaultValue: 'running'
+    },
     num_instances: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    available_instances: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
