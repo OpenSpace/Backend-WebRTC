@@ -55,5 +55,5 @@ Open the web browser and navigate to `http://localhost:<port>`, where `<port>` i
 For more help, reach out to our developers Abhay Garg, Sonia Castelo, Gene Payne on [Slack](https://openspacesupport.slack.com/join/shared_invite/zt-24uhn3wvo-gCGHgjg2m9tHzKUEb_FyMQ).
 
 
-#to-do
+# to-do
 user analytics, server analytics
