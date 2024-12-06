@@ -3,103 +3,130 @@ const Sequelize = require('sequelize');
 const Server = require('../models/Server');
 const Instance = require('../models/Instance');
 
-// Function to fetch non-terminated instances and update their status
-async function fetchAndUpdateInstanceStatuses() {
-    try {
-        // 1. Fetch all non-terminated instances
-        const instances = await Instance.findAll({
-            where: {
-                status: { [Sequelize.Op.ne]: 'TERMINATED' }
+// Helper function to send WebSocket commands
+async function sendWebSocketCommand(uri, message, processResponse) {
+    return new Promise((resolve, reject) => {
+        const ws = new WebSocket(uri);
+
+        ws.on('open', () => {
+            console.log(`Sending message to ${uri}: ${message}`);
+            ws.send(message, (err) => {
+                if (err) {
+                    console.error('Failed to send message:', err);
+                    ws.close();
+                    return reject(err);
+                }
+            });
+        });
+
+        ws.on('message', async (response) => {
+            try {
+                const parsedResponse = JSON.parse(response);
+                await processResponse(parsedResponse);
+                ws.close();
+                resolve();
+            } catch (error) {
+                console.error('Failed to process response:', error);
+                ws.close();
+                reject(error);
             }
         });
 
-        console.log(`Found ${instances.length} non-terminated instances.`);
+        ws.on('error', (error) => {
+            console.error(`WebSocket error: ${error}`);
+            ws.close();
+            reject(error);
+        });
 
+        ws.on('close', () => {
+            console.log(`WebSocket connection closed for ${uri}`);
+        });
+    });
+}
 
-        if (instances.length === 0) {
-            console.log('No non-terminated instances found.');
-            return;
-        }
+// Process STATUS responses
+async function processStatusResponse(instance, response) {
+    // if (response.command !== 'STATUS' || response.id !== instance.process_id || response.error !== "none") {
+    //     console.error('Invalid STATUS response:', response);
+    //     return;
+    // }
 
-        console.log(`instances ${instances[0].instance_id} `);
+    if (response.command !== 'STATUS' || response.error !== "none") {
+        console.error('Invalid STATUS response:', response);
+        return;
+    }
 
-        // 2. For each instance, connect to the server and get the status
-        for (const instance of instances) {
-            const server = await Server.findByPk(instance.server_id);
-            if (!server) {
-                console.log(`Server not found for instance ID: ${instance.id}`);
-                continue;
-            }
-
-            console.log(`server ${server.server_id} `);
-
-            const uri = `ws://${server.ip_address}:${server.port}`;
-            console.log(`Connecting to WebSocket server at ${uri} for instance ID: ${instance.id}`);
-
-            const ws = new WebSocket(uri);
-
-            ws.on('open', () => {
-                const statusMessage = `STATUS\n${instance.process_id}`;
-                console.log(`WebSocket connection established. Sending message: ${statusMessage}`);
-                ws.send(statusMessage);
-            });
-
-            ws.on('message', async (message) => {
-                console.log(`Received response from server for instance ID: ${instance.instance_id}: ${message}`);
-
-                // Parse the response and check if there's any status change
-                let response;
-                try {
-                    response = JSON.parse(message);
-                } catch (error) {
-                    console.error('Failed to parse message:', error);
-                    return;
-                }
-
-                const { procId, procStatus } = response;
-
-                console.log(`procId ${procId} , procStatus ${procStatus} `);
-                if (procId === instance.process_id && procStatus !== instance.status) {
-                    console.log(`Updating status for instance ID: ${instance.instance_id} from ${instance.status} to ${procStatus}`);
-
-                    // 3. Update instance status if there's any change
-                    await Instance.update(
-                        { status: procStatus },
-                        { where: { instance_id: instance.instance_id } }
-                    );
-
-                    if (procStatus === 'TERMINATED') {
-                        console.log(`Instance ID: ${instance.instance_id} has been terminated. Updating server's available instances...`);
-
-                        // 4. If the instance has been terminated, increment the server's available instances
-                        await Server.update(
-                            { available_instances: server.available_instances + 1 },
-                            { where: { server_id: server.server_id } }
-                        );
-                    }
-                } else {
-                    console.log(`No status change for instance ID: ${instance.instance_id}`);
-                }
-
-                ws.close();
-            });
-
-            ws.on('error', (error) => {
-                console.error(`WebSocket error for instance ID: ${instance.id}:`, error);
-            });
-        }
-    } catch (error) {
-        console.error('Error in fetchAndUpdateInstanceStatuses function:', error);
+    const newProcStatus = response.status;
+    if (newProcStatus !== instance.status) {
+        await Instance.update(
+            { status: newProcStatus },
+            { where: { instance_id: instance.instance_id } }
+        );
+        console.log(`Updated status for instance ID: ${instance.instance_id}`);
+    } else {
+        console.log(`No status change for instance ID: ${instance.instance_id}`);
     }
 }
 
-// Function to start the status updater with a 20-second interval
-function startStatusUpdater() {
-    console.log('Starting the status updater...');
-    fetchAndUpdateInstanceStatuses(); // Call the function immediately on start
-    setInterval(fetchAndUpdateInstanceStatuses, 10000); // Repeat every 20 seconds
+// Process SERVER_STATUS responses
+async function processServerStatusResponse(server, response) {
+    if (response.command !== 'SERVER_STATUS' || response.error !== "none") {
+        console.error('Invalid SERVER_STATUS response:', response);
+        return;
+    }
+
+    await Server.update(
+        {
+            available_instances: response.total - response.running,
+            num_instances: response.total
+        },
+        { where: { server_id: server.server_id } }
+    );
+    console.log(`Updated server data for server ID: ${server.server_id}`);
 }
 
-module.exports = {
-    startStatusUpdater
-};
+// Fetch and update instance and server statuses
+async function fetchAndUpdateStatuses() {
+    try {
+        // Update instance statuses
+        const instances = await Instance.findAll({ where: { status: { [Sequelize.Op.ne]: 'IDLE' } } });
+        console.log(`Found ${instances.length} non-idle instances.`);
+        for (const instance of instances) {
+            const server = await Server.findByPk(instance.server_id);
+            if (server) {
+                const uri = `ws://${server.ip_address}:${server.port}`;
+                const message = JSON.stringify({ command: 'STATUS', id: instance.process_id });
+                await sendWebSocketCommand(uri, message, (response) => processStatusResponse(instance, response));
+            }
+        }
+
+        // Update server statuses
+        const servers = await Server.findAll({ where: { status: 'active' } });
+        console.log(`Found ${servers.length} active servers.`);
+        for (const server of servers) {
+            const uri = `ws://${server.ip_address}:${server.port}`;
+            const message = JSON.stringify({ command: 'SERVER_STATUS' });
+            await sendWebSocketCommand(uri, message, (response) => processServerStatusResponse(server, response));
+        }
+    } catch (error) {
+        console.error('Error in fetchAndUpdateStatuses function:', error);
+    }
+}
+
+// Start and stop the status updater
+let updaterInterval = null;
+
+function startStatusUpdater() {
+    console.log('Status updater started.');
+    updaterInterval = setInterval(fetchAndUpdateStatuses, 10000); // Update every 10 seconds
+}
+
+function stopStatusUpdater() {
+    if (updaterInterval) {
+        clearInterval(updaterInterval);
+        updaterInterval = null;
+        console.log('Status updater stopped.');
+    }
+}
+
+module.exports = { startStatusUpdater, stopStatusUpdater };

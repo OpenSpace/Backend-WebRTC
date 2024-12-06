@@ -1,7 +1,6 @@
 const Server = require('../models/Server');
 const Instance = require('../models/Instance');
 const { Sequelize } = require('sequelize');
-const { addServer } = require('../services/serverConnectionManager');
 const WebSocket = require('ws');
 
 exports.createServer = async (req, res) => {
@@ -16,11 +15,10 @@ exports.createServer = async (req, res) => {
 
 exports.getAllServers = async (req, res) => {
     try {
-        // const servers = await Server.findAll();
         const servers = await Server.findAll({
             include: [{
-                model: Instance, // Assuming Instance is your associated model
-                required: false, // Include servers even if they have no instances
+                model: Instance,
+                required: false,
             }]
         });
         res.status(200).send(servers);
@@ -148,7 +146,7 @@ exports.joinServer = async (req, res) => {
         const ws = new WebSocket(uri);
         ws.on('open', () => {
             console.log(`WebSocket connection established. Sending "START" command...`);
-            const message = 'START\n';
+            const message = JSON.stringify({ command: 'START' });
             ws.send(message);
             console.log(`Sent message: ${message}`);
         });
@@ -162,11 +160,11 @@ exports.joinServer = async (req, res) => {
                 console.error('Failed to parse message:', error);
                 return res.status(500).json({ message: 'Invalid response format from server' });
             }
-            const process_id = response.procId;
-            const process_status = response.procStatus;
-            if (process_id === undefined || process_status === undefined || isNaN(process_id)) {
-                return res.status(500).json({ message: 'Invalid response from server: process_id or procStatus is missing or invalid' });
+
+            if(response.error !== "none" || response.id === -1) {
+                return res.status(500).json({ error: response.error });
             }
+
             await Server.update(
                 { available_instances: selectedServer.available_instances - 1 },
                 { where: { server_id: selectedServer.server_id } }
@@ -174,9 +172,9 @@ exports.joinServer = async (req, res) => {
 
             const newInstance = await Instance.create({
                 session_id,
-                process_id,
+                process_id: response.id,
                 server_id: selectedServer.server_id,
-                status: process_status,
+                status: "INITIALIZING",
             });
 
             ws.close();
@@ -228,7 +226,8 @@ exports.joinSpecificServer = async (req, res) => {
         const ws = new WebSocket(uri);
         ws.on('open', () => {
             console.log(`WebSocket connection established. Sending "START" command...`);
-            const message = 'START\n';
+            // const message = 'START\n';
+            const message = JSON.stringify({ command: 'START' });
             ws.send(message);
             console.log(`Sent message: ${message}`);
         }
@@ -248,11 +247,8 @@ exports.joinSpecificServer = async (req, res) => {
                 return res.status(500).json({ message: 'Invalid response format from server' });
             }
 
-            const process_id = response.procId;
-            const process_status = response.procStatus;
-
-            if (process_id === undefined || process_status === undefined || isNaN(process_id)) {
-                return res.status(500).json({ message: 'Invalid response from server: process_id or procStatus is missing or invalid' });
+            if(response.error !== "none" || response.id === -1) {
+                return res.status(500).json({ error: response.error });
             }
 
             await Server.update(
@@ -262,9 +258,9 @@ exports.joinSpecificServer = async (req, res) => {
 
             const newInstance = await Instance.create({
                 session_id,
-                process_id,
+                process_id: response.id,
                 server_id: server.server_id,
-                status: process_status,
+                status: "INITIALIZING",
             });
 
             ws.close();
@@ -311,26 +307,3 @@ exports.getServerInfo = async (req, res) => {
         res.status(400).send(err);
     }
 }
-
-exports.addNewServer = (req, res) => {
-    const { id, url } = req.body;
-
-    if (!id || !url) {
-        return res.status(400).send('Server id and URL are required');
-    }
-
-    // if (id in connections) {
-    //     return res.status(400).send('Server already connected');
-    // }
-
-    if (Server.findOne({ where: { server_id: id } }).filter(server => server.server_id === id)) {
-        return res.status(400).send('Server already added');
-    }
-
-    try {
-        addServer(id, url);
-        res.status(200).send(`Server ${id} added and connected`);
-    } catch (error) {
-        res.status(500).send('Failed to add server');
-    }
-};

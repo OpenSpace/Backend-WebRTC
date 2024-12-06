@@ -3,7 +3,6 @@ const router = express.Router();
 const serverController = require('../controllers/serverController');
 
 router.post('/', serverController.createServer);  
-router.post('/add-new-server', serverController.addNewServer);
 router.get('/', serverController.getAllServers);
 
 // more specific routes comes first

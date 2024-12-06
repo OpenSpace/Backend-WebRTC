@@ -10,7 +10,6 @@ router.get('/', instanceController.getAllInstances);
 router.get('/running-instances', instanceController.getRunningInstances);
 
 router.get('/:id', instanceController.getInstance);
-router.put('/:id/exit', instanceController.exitInstance);
 router.put('/:id/terminate', instanceController.terminateInstance);
 
 module.exports = router;

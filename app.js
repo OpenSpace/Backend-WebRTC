@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { sequelize } = require('./config/database');
-const { startStatusUpdater } = require('./scripts/statusUpdater');
+const { startStatusUpdater, stopStatusUpdater } = require('./scripts/statusUpdater');
 
 
 const healthRoutes = require('./routes/healthRoutes');
@@ -22,7 +22,7 @@ app.use('/servers', serverRoutes);
 app.use('/instances', instanceRoutes);
 
 // Sync the models with the database
-sequelize.sync()
+sequelize.sync({})
   .then(() => {
     console.log("Database & tables created!");
   })
@@ -32,8 +32,27 @@ sequelize.sync()
 
 startStatusUpdater();
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log('Server running on port', port);
+});
+
+// Handle shutdown signals
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  stopStatusUpdater();
+  server.close(() => {
+      console.log('App closed.');
+      process.exit(0);
+  });
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  stopStatusUpdater();
+  server.close(() => {
+      console.log('Server closed.');
+      process.exit(0);
+  });
 });
 
 module.exports = app;
