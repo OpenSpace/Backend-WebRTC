@@ -4,15 +4,16 @@ This documentation will walk you through the steps to run Openspace Express appl
 
 ## Prerequisites
 Before getting started, make sure you have the following installed on your system:
-- Node.js
-- PostgreSQL
-- PostGIS extension for PostgreSQL
+- Node.js (https://nodejs.org/en/download)
+- PostgreSQL (https://www.postgresql.org/download/)
+- DBeaver (https://dbeaver.io/download/)
+- PostGIS extension for PostgreSQL (in step-3)
 
 ## Step 1: Clone the repository
-Clone the repository containing the Express application to your local machine.
+Clone the repository:
 
-```shell
-git clone https://github.com/OpenSpace/UI-WebRTC.git
+```bash
+git clone https://github.com/OpenSpace/Backend-WebRTC.git
 ```
 
 ## Step 2: Install dependencies
@@ -32,14 +33,14 @@ psql -d openspace -c "CREATE EXTENSION postgis;"
 ```
 
 ## Step 4: Configure the database connection
-Open the `.env` file in the project directory and update the database connection details.
+Open the `.env` file in the project directory and update the database connection details as required.
 
-```shell
-DB_HOST=<database-host>
-DB_PORT=<database-port>
-DB_NAME=<database-name>
-DB_USER=<database-username>
-DB_PASSWORD=<database-password>
+```bash
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME='openspace'
+DB_USER='openspaceuser'
+DB_PASSWORD='password'
 ```
 
 ## Step 5: Start the application
@@ -50,10 +51,10 @@ npm start
 ```
 
 ## Step 6: Test the application
-Open the web browser and navigate to `http://localhost:<port>`, where `<port>` is the port specified in the Express application.
+Open the postman (or any API management tool) and access APIs at `http://localhost:5000`, where `5000` is the default port specified in the backend express application.
 
 For more help, reach out to our developers Abhay Garg, Sonia Castelo, Gene Payne on [Slack](https://openspacesupport.slack.com/join/shared_invite/zt-24uhn3wvo-gCGHgjg2m9tHzKUEb_FyMQ).
 
 
-# to-do
+# To-Do
 user analytics, server analytics
