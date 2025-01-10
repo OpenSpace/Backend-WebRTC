@@ -48,8 +48,7 @@ exports.updateServer = async (req, res) => {
         num_instances,
         ram,
         graphics_card,
-        storage,
-        geo_location,
+        storage
     } = req.body;
 
     try {
@@ -69,7 +68,6 @@ exports.updateServer = async (req, res) => {
         server.ram = ram !== undefined ? ram : server.ram;
         server.graphics_card = graphics_card !== undefined ? graphics_card : server.graphics_card;
         server.storage = storage !== undefined ? storage : server.storage;
-        server.geo_location = geo_location !== undefined ? geo_location : server.geo_location;
 
         await server.save();
 

@@ -25,11 +25,13 @@ npm install
 ```
 
 ## Step 3: Set up the database
-Create a new PostgreSQL database and enable the PostGIS extension.
+Create a new PostgreSQL database
+Follow this medium article to setup postgres and dbeaver in windows:
+https://medium.com/@zum.hatice/how-to-create-a-postgresql-db-and-connect-in-windows-b26eaa48c7fb
 
-```shell
+Make sure you have performed below command while setting up postgres and dbeaver.
+```bash
 createdb openspace
-psql -d openspace -c "CREATE EXTENSION postgis;"
 ```
 
 ## Step 4: Configure the database connection
@@ -39,14 +41,19 @@ Open the `.env` file in the project directory and update the database connection
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME='openspace'
-DB_USER='openspaceuser'
+DB_USER='postgres'
 DB_PASSWORD='password'
 ```
 
-## Step 5: Start the application
+## Step 5: Seed the tables and configs
+```bash
+node .\seed.js
+```
+
+## Step 6: Start the application
 Start the Express application using the following command:
 
-```shell
+```bash
 npm start
 ```
 

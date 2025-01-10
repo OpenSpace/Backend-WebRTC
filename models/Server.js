@@ -46,11 +46,7 @@ const Server = sequelize.define('Server', {
   storage: {
     type: DataTypes.STRING,
     allowNull: false,
-  },
-  geo_location: {
-    type: DataTypes.GEOMETRY('POINT'),
-    allowNull: true,
-  },
+  }
 }, {
   // Enable Sequelize's built-in timestamps
   timestamps: true,

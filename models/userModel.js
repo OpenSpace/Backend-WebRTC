@@ -11,10 +11,6 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    location_coordinates: {
-        type: DataTypes.GEOMETRY('POINT'),
-        allowNull: false
-    },
     screen_width: {
         type: DataTypes.INTEGER,
         allowNull: false
