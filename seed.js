@@ -21,7 +21,7 @@ async function seedDatabase() {
         // Define the sample server data
         const serverData = {
             region: 'us-east-3',
-            ip_address: 'http://192.168.219.221',
+            ip_address: 'localhost',
             port: 4690,
             available_instances: 5,
             num_instances: 5,

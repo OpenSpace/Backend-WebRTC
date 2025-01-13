@@ -5,8 +5,7 @@ node_modules/
 logs/
 *.log
 
-# Environment variables
-.env
+
 
 # Build output
 dist/

@@ -57,6 +57,7 @@ async function processStatusResponse(instance, response) {
     }
 
     const newProcStatus = response.status;
+    console.log("response: ", response);
     if (newProcStatus !== instance.status) {
         await Instance.update(
             { status: newProcStatus },
@@ -96,6 +97,7 @@ async function fetchAndUpdateStatuses() {
             if (server) {
                 const uri = `ws://${server.ip_address}:${server.port}`;
                 const message = JSON.stringify({ command: 'STATUS', id: instance.process_id });
+                console.log("message: ", message);
                 await sendWebSocketCommand(uri, message, (response) => processStatusResponse(instance, response));
             }
         }

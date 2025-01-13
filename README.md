@@ -7,7 +7,6 @@ Before getting started, make sure you have the following installed on your syste
 - Node.js (https://nodejs.org/en/download)
 - PostgreSQL (https://www.postgresql.org/download/)
 - DBeaver (https://dbeaver.io/download/)
-- PostGIS extension for PostgreSQL (in step-3)
 
 ## Step 1: Clone the repository
 Clone the repository:
