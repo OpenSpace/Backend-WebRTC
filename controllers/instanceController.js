@@ -132,7 +132,6 @@ exports.terminateInstance = async (req, res) => {
 
 exports.getAllRunningInstancesBySessionId = async (req, res) => {
     const { session_id } = req.params;
-    console.log("session_id: ", session_id);
     try {
         // Fetch instances by session_id
         const instances = await Instance.findAll({
