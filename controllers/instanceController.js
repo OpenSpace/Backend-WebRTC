@@ -1,6 +1,7 @@
 const Instance = require('../models/Instance');
 const Server = require('../models/Server');
 const WebSocket = require('ws');
+const Sequelize = require('sequelize');
 
 exports.createInstance = async (req, res) => {
     try {
@@ -36,11 +37,24 @@ exports.getRunningInstances = async (req, res) => {
 
 exports.getInstance = async (req, res) => {
     try {
-        const instance = await Instance.findByPk(req.params.id);
-        if (!instance) return res.status(404).send('Instance not found');
-        res.status(200).send(instance);
+        // Fetch the instance along with the associated server details
+        const instance = await Instance.findByPk(req.params.id, {
+            include: [
+                {
+                    model: Server,
+                    attributes: ['ip_address', 'port', 'status'],
+                },
+            ],
+        });
+
+        if (!instance) {
+            return res.status(404).json({ message: 'Instance not found' });
+        }
+
+        res.status(200).json(instance);
     } catch (err) {
-        res.status(400).send(err);
+        console.error('Error fetching instance:', err);
+        res.status(500).json({ message: 'An error occurred while fetching the instance', error: err });
     }
 };
 
@@ -113,5 +127,27 @@ exports.terminateInstance = async (req, res) => {
     } catch (error) {
         console.error('Error handling /terminate request:', error);
         return res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+exports.getAllRunningInstancesBySessionId = async (req, res) => {
+    const { session_id } = req.params;
+    console.log("session_id: ", session_id);
+    try {
+        // Fetch instances by session_id
+        const instances = await Instance.findAll({
+            where: {
+                session_id,
+                status: { [Sequelize.Op.ne]: "IDLE" }
+            }
+        });
+
+        if (!instances || instances.length === 0) {
+            return res.status(200).json({ message: 'No instances found for the given session ID' });
+        }
+        res.status(200).json(instances);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while fetching instances', error });
     }
 };
