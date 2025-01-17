@@ -46,7 +46,7 @@ DB_PASSWORD='password'
 
 ## Step 5: Seed the tables and configs
 ```bash
-node .\seed.js
+node seed.js
 ```
 
 ## Step 6: Start the application

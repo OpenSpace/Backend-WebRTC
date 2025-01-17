@@ -22,7 +22,7 @@ async function seedDatabase() {
         const serverData = {
             region: 'us-east-3',
             ip_address: 'localhost',
-            port: 4690,
+            port: 4699,
             available_instances: 5,
             num_instances: 5,
             ram: '64GB',
